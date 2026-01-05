@@ -248,10 +248,17 @@ function makeAIMove() {
         var capturedPiece = null;
         var targetSquare = null;
 
+        // Medir tiempo de pensamiento de la IA
+        var startThinkTime = Date.now();
+
         // Obtener información antes del movimiento
         var moves = game.moves({ verbose: true });
         var depth = difficulty;
         var bestMove = calculateBestMove(depth);
+
+        // Calcular tiempo transcurrido (en milisegundos)
+        var thinkingTime = Date.now() - startThinkTime;
+        var thinkingSeconds = Math.ceil(thinkingTime / 1000); // Redondear hacia arriba
 
         if (bestMove) {
             // Buscar el movimiento detallado
@@ -293,6 +300,26 @@ function makeAIMove() {
             updateStatistics();
         }
 
+        // Descontar el tiempo de pensamiento del reloj de la IA
+        var aiColor = playerColor === 'white' ? 'black' : 'white';
+        if (aiColor === 'white') {
+            whiteTime = Math.max(0, whiteTime - thinkingSeconds);
+        } else {
+            blackTime = Math.max(0, blackTime - thinkingSeconds);
+        }
+
+        // Verificar si la IA perdió por tiempo
+        if ((aiColor === 'white' && whiteTime <= 0) || (aiColor === 'black' && blackTime <= 0)) {
+            pauseClock();
+            gameInProgress = false;
+            var winner = aiColor === 'white' ? 'las negras' : 'las blancas';
+            $('#gameStatus').removeClass('alert-warning').addClass('alert-danger')
+                .show().html('<i class="bi bi-clock-fill"></i> ¡Tiempo agotado! Ganan ' + winner);
+            playSound('gameOver');
+        }
+
+        updateClockDisplay();
+
         $('#thinkingIndicator').hide();
         gameInProgress = true;
 
@@ -305,7 +332,7 @@ function makeAIMove() {
         if (game.game_over()) {
             pauseClock();
             playSound('gameOver');
-        } else {
+        } else if (gameInProgress) {
             // Iniciar el reloj del jugador después del movimiento de la IA
             switchClock();
         }
