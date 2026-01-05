@@ -140,9 +140,8 @@ function onDrop(source, target) {
         playSound('check');
     }
 
-    // Cambiar turno del reloj
+    // Pausar el reloj mientras la IA piensa
     pauseClock();
-    switchClock();
 
     if (!game.game_over()) {
         window.setTimeout(makeAIMove, 250);
@@ -307,8 +306,7 @@ function makeAIMove() {
             pauseClock();
             playSound('gameOver');
         } else {
-            // Cambiar turno del reloj
-            pauseClock();
+            // Iniciar el reloj del jugador después del movimiento de la IA
             switchClock();
         }
     }, 200);
