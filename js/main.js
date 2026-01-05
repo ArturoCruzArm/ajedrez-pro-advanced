@@ -332,9 +332,9 @@ function pauseClock() {
 function switchClock() {
     activePlayer = game.turn() === 'w' ? 'white' : 'black';
 
-    // Verificar que el control de tiempo no sea "Sin límite"
+    // Solo correr el reloj si es el turno del jugador humano
     var timeControl = parseInt($('#timeControl').val());
-    if (timeControl > 0) {
+    if (timeControl > 0 && activePlayer === playerColor) {
         startClock();
     }
 
@@ -352,25 +352,28 @@ function updateClock() {
         return;
     }
 
-    if (activePlayer === 'white') {
-        whiteTime--;
-        if (whiteTime <= 0) {
-            whiteTime = 0;
-            pauseClock();
-            gameInProgress = false;
-            $('#gameStatus').removeClass('alert-warning').addClass('alert-danger')
-                .show().html('<i class="bi bi-clock-fill"></i> ¡Tiempo agotado! Ganan las negras');
-            playSound('gameOver');
-        }
-    } else {
-        blackTime--;
-        if (blackTime <= 0) {
-            blackTime = 0;
-            pauseClock();
-            gameInProgress = false;
-            $('#gameStatus').removeClass('alert-warning').addClass('alert-danger')
-                .show().html('<i class="bi bi-clock-fill"></i> ¡Tiempo agotado! Ganan las blancas');
-            playSound('gameOver');
+    // Solo descontar tiempo del jugador humano
+    if (activePlayer === playerColor) {
+        if (playerColor === 'white') {
+            whiteTime--;
+            if (whiteTime <= 0) {
+                whiteTime = 0;
+                pauseClock();
+                gameInProgress = false;
+                $('#gameStatus').removeClass('alert-warning').addClass('alert-danger')
+                    .show().html('<i class="bi bi-clock-fill"></i> ¡Tiempo agotado! Ganan las negras');
+                playSound('gameOver');
+            }
+        } else {
+            blackTime--;
+            if (blackTime <= 0) {
+                blackTime = 0;
+                pauseClock();
+                gameInProgress = false;
+                $('#gameStatus').removeClass('alert-warning').addClass('alert-danger')
+                    .show().html('<i class="bi bi-clock-fill"></i> ¡Tiempo agotado! Ganan las blancas');
+                playSound('gameOver');
+            }
         }
     }
 
