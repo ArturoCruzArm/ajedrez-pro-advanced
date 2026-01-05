@@ -4,23 +4,27 @@
 var board = null;
 var game = new Chess();
 var playerColor = 'white';
-var difficulty = 3; // 1-5, donde 5 es el más difícil
+var difficulty = 3;
 var gameInProgress = true;
 var lastMove = { from: null, to: null };
+var moveHistory = [];
+var capturedPieces = { white: [], black: [] };
+var soundEnabled = true;
+
+// Reloj de ajedrez
+var whiteTime = 600; // segundos
+var blackTime = 600;
+var clockInterval = null;
+var activePlayer = 'white';
 
 // ============================================
 // VALORES DE LAS PIEZAS
 // ============================================
 var pieceValues = {
-    'p': 100,
-    'n': 320,
-    'b': 330,
-    'r': 500,
-    'q': 900,
-    'k': 20000
+    'p': 100, 'n': 320, 'b': 330,
+    'r': 500, 'q': 900, 'k': 20000
 };
 
-// Tablas de posición para mejorar la evaluación
 var pawnTable = [
     0,  0,  0,  0,  0,  0,  0,  0,
     50, 50, 50, 50, 50, 50, 50, 50,
@@ -44,6 +48,31 @@ var knightTable = [
 ];
 
 // ============================================
+// SÍMBOLOS UNICODE DE PIEZAS
+// ============================================
+var pieceSymbols = {
+    'wP': '♙', 'wN': '♘', 'wB': '♗', 'wR': '♖', 'wQ': '♕', 'wK': '♔',
+    'bP': '♟', 'bN': '♞', 'bB': '♝', 'bR': '♜', 'bQ': '♛', 'bK': '♚'
+};
+
+// ============================================
+// SISTEMA DE SONIDOS
+// ============================================
+var sounds = {
+    move: new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQoGAAA='),
+    capture: new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQoGAAA='),
+    check: new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQoGAAA='),
+    gameOver: new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQoGAAA=')
+};
+
+function playSound(type) {
+    if (soundEnabled && sounds[type]) {
+        sounds[type].currentTime = 0;
+        sounds[type].play().catch(e => console.log('Audio playback failed'));
+    }
+}
+
+// ============================================
 // CONFIGURACIÓN DEL TABLERO
 // ============================================
 var config = {
@@ -56,19 +85,13 @@ var config = {
 };
 
 function onDragStart(source, piece, position, orientation) {
-    // No permitir mover si el juego terminó
-    if (game.game_over()) return false;
+    if (game.game_over() || !gameInProgress) return false;
 
-    // No permitir mover si no está en progreso
-    if (!gameInProgress) return false;
-
-    // Solo permitir mover piezas del color del jugador
     if ((playerColor === 'white' && piece.search(/^b/) !== -1) ||
         (playerColor === 'black' && piece.search(/^w/) !== -1)) {
         return false;
     }
 
-    // Solo permitir mover en el turno correcto
     if ((game.turn() === 'w' && playerColor !== 'white') ||
         (game.turn() === 'b' && playerColor !== 'black')) {
         return false;
@@ -78,29 +101,54 @@ function onDragStart(source, piece, position, orientation) {
 function onDrop(source, target) {
     removeHighlights();
 
-    // Ver si el movimiento es legal
+    var capturedPiece = game.get(target);
     var move = game.move({
         from: source,
         to: target,
-        promotion: 'q' // Siempre promocionar a reina
+        promotion: 'q'
     });
 
-    // Movimiento ilegal
     if (move === null) return 'snapback';
 
-    // Guardar el último movimiento para resaltarlo
-    lastMove = { from: source, to: target };
+    // Guardar movimiento en historial
+    moveHistory.push({
+        san: move.san,
+        from: move.from,
+        to: move.to,
+        fen: game.fen()
+    });
 
-    // Resaltar el último movimiento
+    // Registrar pieza capturada
+    if (move.captured) {
+        var color = move.color === 'w' ? 'black' : 'white';
+        capturedPieces[color].push(move.captured);
+        updateCapturedPieces();
+        playSound('capture');
+    } else {
+        playSound('move');
+    }
+
+    lastMove = { from: source, to: target };
     highlightSquare(source);
     highlightSquare(target);
 
-    // Actualizar estado
+    updateMoveHistory();
+    updateStatistics();
     updateStatus();
 
-    // Si el juego continúa, hacer movimiento de la IA
+    if (game.in_check()) {
+        playSound('check');
+    }
+
+    // Cambiar turno del reloj
+    pauseClock();
+    switchClock();
+
     if (!game.game_over()) {
         window.setTimeout(makeAIMove, 250);
+    } else {
+        pauseClock();
+        playSound('gameOver');
     }
 }
 
@@ -109,10 +157,8 @@ function onSnapEnd() {
 }
 
 // ============================================
-// LÓGICA DE LA IA
+// MOTOR IA (MINIMAX)
 // ============================================
-
-// Evaluar la posición del tablero
 function evaluateBoard(game) {
     var board = game.board();
     var totalEvaluation = 0;
@@ -122,21 +168,16 @@ function evaluateBoard(game) {
             totalEvaluation += getPieceValue(board[i][j], i, j);
         }
     }
-
     return totalEvaluation;
 }
 
-// Obtener el valor de una pieza en una posición
 function getPieceValue(piece, x, y) {
-    if (piece === null) {
-        return 0;
-    }
+    if (piece === null) return 0;
 
     var absoluteValue = getAbsoluteValue(piece, piece.color === 'w', x, y);
     return piece.color === 'w' ? absoluteValue : -absoluteValue;
 }
 
-// Obtener el valor absoluto de una pieza considerando su posición
 function getAbsoluteValue(piece, isWhite, x, y) {
     if (piece.type === 'p') {
         return pieceValues['p'] + (isWhite ? pawnTable[63 - (x * 8 + y)] : pawnTable[x * 8 + y]);
@@ -147,7 +188,6 @@ function getAbsoluteValue(piece, isWhite, x, y) {
     }
 }
 
-// Algoritmo Minimax con poda alfa-beta
 function minimax(depth, game, alpha, beta, isMaximisingPlayer) {
     if (depth === 0) {
         return -evaluateBoard(game);
@@ -162,9 +202,7 @@ function minimax(depth, game, alpha, beta, isMaximisingPlayer) {
             bestMove = Math.max(bestMove, minimax(depth - 1, game, alpha, beta, !isMaximisingPlayer));
             game.undo();
             alpha = Math.max(alpha, bestMove);
-            if (beta <= alpha) {
-                return bestMove;
-            }
+            if (beta <= alpha) return bestMove;
         }
         return bestMove;
     } else {
@@ -174,15 +212,12 @@ function minimax(depth, game, alpha, beta, isMaximisingPlayer) {
             bestMove = Math.min(bestMove, minimax(depth - 1, game, alpha, beta, !isMaximisingPlayer));
             game.undo();
             beta = Math.min(beta, bestMove);
-            if (beta <= alpha) {
-                return bestMove;
-            }
+            if (beta <= alpha) return bestMove;
         }
         return bestMove;
     }
 }
 
-// Calcular el mejor movimiento para la IA
 function calculateBestMove(depth) {
     var moves = game.moves();
     var bestMove = null;
@@ -198,81 +233,292 @@ function calculateBestMove(depth) {
             bestMove = move;
         }
     }
-
     return bestMove;
 }
 
-// Hacer el movimiento de la IA
 function makeAIMove() {
     if (game.game_over()) {
         updateStatus();
         return;
     }
 
-    // Mostrar indicador de pensamiento
     $('#thinkingIndicator').show();
     gameInProgress = false;
 
-    // Usar setTimeout para no bloquear la UI
     window.setTimeout(function() {
-        var depth = difficulty; // La profundidad depende de la dificultad
+        var capturedPiece = null;
+        var targetSquare = null;
+
+        // Obtener información antes del movimiento
+        var moves = game.moves({ verbose: true });
+        var depth = difficulty;
         var bestMove = calculateBestMove(depth);
 
         if (bestMove) {
+            // Buscar el movimiento detallado
+            for (var i = 0; i < moves.length; i++) {
+                if (moves[i].san === bestMove) {
+                    targetSquare = moves[i].to;
+                    capturedPiece = game.get(targetSquare);
+                    break;
+                }
+            }
+
             var move = game.move(bestMove);
             board.position(game.fen());
 
-            // Guardar y resaltar el último movimiento
+            // Registrar pieza capturada
+            if (move.captured) {
+                var color = move.color === 'w' ? 'black' : 'white';
+                capturedPieces[color].push(move.captured);
+                updateCapturedPieces();
+                playSound('capture');
+            } else {
+                playSound('move');
+            }
+
+            // Agregar al historial
+            moveHistory.push({
+                san: move.san,
+                from: move.from,
+                to: move.to,
+                fen: game.fen()
+            });
+
             lastMove = { from: move.from, to: move.to };
             removeHighlights();
             highlightSquare(move.from);
             highlightSquare(move.to);
+
+            updateMoveHistory();
+            updateStatistics();
         }
 
-        // Ocultar indicador de pensamiento
         $('#thinkingIndicator').hide();
         gameInProgress = true;
 
         updateStatus();
+
+        if (game.in_check()) {
+            playSound('check');
+        }
+
+        if (game.game_over()) {
+            pauseClock();
+            playSound('gameOver');
+        } else {
+            // Cambiar turno del reloj
+            pauseClock();
+            switchClock();
+        }
     }, 200);
 }
 
 // ============================================
-// ACTUALIZACIÓN DE ESTADO
+// RELOJ DE AJEDREZ
 // ============================================
-function updateStatus() {
-    var status = '';
-    var turnText = '';
+function startClock() {
+    pauseClock();
+    clockInterval = setInterval(updateClock, 1000);
+    updateClockDisplay();
+}
 
-    if (game.turn() === 'w') {
-        turnText = 'Turno: Blancas';
-    } else {
-        turnText = 'Turno: Negras';
+function pauseClock() {
+    if (clockInterval) {
+        clearInterval(clockInterval);
+        clockInterval = null;
+    }
+    $('.player-clock').removeClass('active');
+}
+
+function switchClock() {
+    activePlayer = game.turn() === 'w' ? 'white' : 'black';
+
+    // Verificar que el control de tiempo no sea "Sin límite"
+    var timeControl = parseInt($('#timeControl').val());
+    if (timeControl > 0) {
+        startClock();
     }
 
+    $('.player-clock').removeClass('active');
+    if (activePlayer === 'white') {
+        $('.white-clock').addClass('active');
+    } else {
+        $('.black-clock').addClass('active');
+    }
+}
+
+function updateClock() {
+    if (!gameInProgress || game.game_over()) {
+        pauseClock();
+        return;
+    }
+
+    if (activePlayer === 'white') {
+        whiteTime--;
+        if (whiteTime <= 0) {
+            whiteTime = 0;
+            pauseClock();
+            gameInProgress = false;
+            $('#gameStatus').removeClass('alert-warning').addClass('alert-danger')
+                .show().html('<i class="bi bi-clock-fill"></i> ¡Tiempo agotado! Ganan las negras');
+            playSound('gameOver');
+        }
+    } else {
+        blackTime--;
+        if (blackTime <= 0) {
+            blackTime = 0;
+            pauseClock();
+            gameInProgress = false;
+            $('#gameStatus').removeClass('alert-warning').addClass('alert-danger')
+                .show().html('<i class="bi bi-clock-fill"></i> ¡Tiempo agotado! Ganan las blancas');
+            playSound('gameOver');
+        }
+    }
+
+    updateClockDisplay();
+}
+
+function updateClockDisplay() {
+    $('#whiteClock').text(formatTime(whiteTime));
+    $('#blackClock').text(formatTime(blackTime));
+
+    // Advertencia de tiempo bajo (menos de 30 segundos)
+    if (whiteTime <= 30) {
+        $('.white-clock').addClass('time-low');
+    } else {
+        $('.white-clock').removeClass('time-low');
+    }
+
+    if (blackTime <= 30) {
+        $('.black-clock').addClass('time-low');
+    } else {
+        $('.black-clock').removeClass('time-low');
+    }
+}
+
+function formatTime(seconds) {
+    var mins = Math.floor(seconds / 60);
+    var secs = seconds % 60;
+    return mins + ':' + (secs < 10 ? '0' : '') + secs;
+}
+
+// ============================================
+// HISTORIAL DE MOVIMIENTOS
+// ============================================
+function updateMoveHistory() {
+    var historyHTML = '';
+    var moveNumber = 1;
+
+    for (var i = 0; i < moveHistory.length; i += 2) {
+        historyHTML += '<div class="move-row">';
+        historyHTML += '<span class="move-number">' + moveNumber + '.</span>';
+        historyHTML += '<span class="move-notation">' + moveHistory[i].san + '</span>';
+
+        if (i + 1 < moveHistory.length) {
+            historyHTML += '<span class="move-notation">' + moveHistory[i + 1].san + '</span>';
+        } else {
+            historyHTML += '<span></span>';
+        }
+
+        historyHTML += '</div>';
+        moveNumber++;
+    }
+
+    if (historyHTML === '') {
+        historyHTML = '<p class="text-muted text-center">No hay movimientos aún</p>';
+    }
+
+    $('#moveHistory').html(historyHTML);
+
+    // Auto-scroll al final
+    var historyDiv = $('#moveHistory')[0];
+    historyDiv.scrollTop = historyDiv.scrollHeight;
+}
+
+// ============================================
+// PIEZAS CAPTURADAS
+// ============================================
+function updateCapturedPieces() {
+    var whiteCapturedHTML = '';
+    var blackCapturedHTML = '';
+
+    // Piezas blancas capturadas (capturadas por las negras)
+    for (var i = 0; i < capturedPieces.white.length; i++) {
+        var piece = 'w' + capturedPieces.white[i].toUpperCase();
+        whiteCapturedHTML += '<span class="captured-piece">' + pieceSymbols[piece] + '</span>';
+    }
+
+    // Piezas negras capturadas (capturadas por las blancas)
+    for (var i = 0; i < capturedPieces.black.length; i++) {
+        var piece = 'b' + capturedPieces.black[i].toUpperCase();
+        blackCapturedHTML += '<span class="captured-piece">' + pieceSymbols[piece] + '</span>';
+    }
+
+    $('#whiteCaptured').html(whiteCapturedHTML || '<span class="text-muted">Ninguna</span>');
+    $('#blackCaptured').html(blackCapturedHTML || '<span class="text-muted">Ninguna</span>');
+}
+
+// ============================================
+// ESTADÍSTICAS
+// ============================================
+function calculateMaterial(color) {
+    var board = game.board();
+    var material = 0;
+
+    for (var i = 0; i < 8; i++) {
+        for (var j = 0; j < 8; j++) {
+            var piece = board[i][j];
+            if (piece && piece.color === color) {
+                material += pieceValues[piece.type] || 0;
+            }
+        }
+    }
+
+    return Math.floor(material / 100);
+}
+
+function updateStatistics() {
+    $('#whiteMaterial').text(calculateMaterial('w'));
+    $('#blackMaterial').text(calculateMaterial('b'));
+    $('#whiteCaptures').text(capturedPieces.black.length);
+    $('#blackCaptures').text(capturedPieces.white.length);
+    $('#totalMoves').text(Math.ceil(moveHistory.length / 2));
+}
+
+// ============================================
+// ESTADO DEL JUEGO
+// ============================================
+function updateStatus() {
+    var turnText = game.turn() === 'w' ?
+        '<i class="bi bi-hourglass-split"></i> Turno: Blancas' :
+        '<i class="bi bi-hourglass-split"></i> Turno: Negras';
+
     if (game.in_checkmate()) {
-        status = '¡Jaque mate! Ganan ' + (game.turn() === 'w' ? 'las negras' : 'las blancas');
+        var winner = game.turn() === 'w' ? 'las negras' : 'las blancas';
+        $('#gameStatus').removeClass('alert-warning').addClass('alert-danger')
+            .show().html('<i class="bi bi-trophy-fill"></i> ¡Jaque mate! Ganan ' + winner);
         gameInProgress = false;
-        $('#gameStatus').removeClass('alert-warning').addClass('alert-danger').show().html(status);
+        $('#undoBtn').prop('disabled', true);
     } else if (game.in_draw()) {
-        status = '¡Empate!';
+        $('#gameStatus').removeClass('alert-warning').addClass('alert-info')
+            .show().html('<i class="bi bi-hand-thumbs-up"></i> ¡Empate!');
         gameInProgress = false;
-        $('#gameStatus').removeClass('alert-warning').addClass('alert-info').show().html(status);
     } else if (game.in_stalemate()) {
-        status = '¡Tablas por ahogado!';
+        $('#gameStatus').removeClass('alert-warning').addClass('alert-info')
+            .show().html('<i class="bi bi-hand-thumbs-up"></i> ¡Tablas por ahogado!');
         gameInProgress = false;
-        $('#gameStatus').removeClass('alert-warning').addClass('alert-info').show().html(status);
     } else if (game.in_threefold_repetition()) {
-        status = '¡Tablas por triple repetición!';
+        $('#gameStatus').removeClass('alert-warning').addClass('alert-info')
+            .show().html('<i class="bi bi-hand-thumbs-up"></i> ¡Tablas por triple repetición!');
         gameInProgress = false;
-        $('#gameStatus').removeClass('alert-warning').addClass('alert-info').show().html(status);
     } else if (game.insufficient_material()) {
-        status = '¡Tablas por material insuficiente!';
+        $('#gameStatus').removeClass('alert-warning').addClass('alert-info')
+            .show().html('<i class="bi bi-hand-thumbs-up"></i> ¡Tablas por material insuficiente!');
         gameInProgress = false;
-        $('#gameStatus').removeClass('alert-warning').addClass('alert-info').show().html(status);
     } else if (game.in_check()) {
-        status = '¡Jaque!';
-        $('#gameStatus').removeClass('alert-danger alert-info').addClass('alert-warning').show().html(status);
+        $('#gameStatus').removeClass('alert-danger alert-info').addClass('alert-warning')
+            .show().html('<i class="bi bi-exclamation-triangle-fill"></i> ¡Jaque!');
     } else {
         $('#gameStatus').hide();
     }
@@ -281,73 +527,223 @@ function updateStatus() {
 }
 
 // ============================================
-// RESALTADO DE CUADROS
+// RESALTADO
 // ============================================
 function removeHighlights() {
     $('#board .square-55d63').removeClass('highlight-last-move');
 }
 
 function highlightSquare(square) {
-    var $square = $('#board .square-' + square);
-    $square.addClass('highlight-last-move');
+    $('#board .square-' + square).addClass('highlight-last-move');
 }
 
 // ============================================
-// CONTROLES DE INTERFAZ
+// FUNCIONES DE CONTROL
 // ============================================
 function newGame() {
+    pauseClock();
+
     game.reset();
     board.start();
     gameInProgress = true;
+    moveHistory = [];
+    capturedPieces = { white: [], black: [] };
     lastMove = { from: null, to: null };
+
+    var timeControl = parseInt($('#timeControl').val());
+    whiteTime = timeControl;
+    blackTime = timeControl;
+    activePlayer = 'white';
+
     removeHighlights();
+    updateMoveHistory();
+    updateCapturedPieces();
+    updateStatistics();
+    updateClockDisplay();
     $('#gameStatus').hide();
+    $('#undoBtn').prop('disabled', false);
     updateStatus();
 
-    // Si el jugador es negras, la IA mueve primero
+    $('.player-clock').removeClass('active time-low');
+
     if (playerColor === 'black') {
-        window.setTimeout(makeAIMove, 500);
+        window.setTimeout(function() {
+            makeAIMove();
+        }, 500);
+    } else if (timeControl > 0) {
+        startClock();
+        $('.white-clock').addClass('active');
     }
 }
 
-function setDifficulty(level) {
-    difficulty = parseInt(level);
+function undoMove() {
+    if (moveHistory.length < 2) return;
+
+    // Deshacer el movimiento de la IA
+    game.undo();
+    moveHistory.pop();
+
+    // Deshacer el movimiento del jugador
+    game.undo();
+    var playerMove = moveHistory.pop();
+
+    // Actualizar tablero
+    board.position(game.fen());
+
+    // Recalcular piezas capturadas
+    recalculateCapturedPieces();
+
+    removeHighlights();
+    updateMoveHistory();
+    updateCapturedPieces();
+    updateStatistics();
+    updateStatus();
+
+    gameInProgress = true;
 }
 
-function setPlayerColor(color) {
-    playerColor = color;
-    board.orientation(color);
+function recalculateCapturedPieces() {
+    capturedPieces = { white: [], black: [] };
+
+    for (var i = 0; i < moveHistory.length; i++) {
+        var fen = moveHistory[i].fen;
+        var tempGame = new Chess(fen);
+        var history = tempGame.history({ verbose: true });
+
+        for (var j = 0; j < history.length; j++) {
+            if (history[j].captured) {
+                var color = history[j].color === 'w' ? 'black' : 'white';
+                capturedPieces[color].push(history[j].captured);
+            }
+        }
+    }
 }
 
 function flipBoard() {
     board.flip();
 }
 
+function changeTheme(theme) {
+    $('body').attr('data-theme', theme);
+}
+
+// ============================================
+// GUARDAR/CARGAR PARTIDA
+// ============================================
+function saveGame() {
+    var gameData = {
+        fen: game.fen(),
+        moveHistory: moveHistory,
+        capturedPieces: capturedPieces,
+        whiteTime: whiteTime,
+        blackTime: blackTime,
+        playerColor: playerColor,
+        difficulty: difficulty
+    };
+
+    localStorage.setItem('chessGameSave', JSON.stringify(gameData));
+    alert('Partida guardada exitosamente!');
+}
+
+function loadGame() {
+    var savedData = localStorage.getItem('chessGameSave');
+
+    if (!savedData) {
+        alert('No hay partida guardada');
+        return;
+    }
+
+    try {
+        var gameData = JSON.parse(savedData);
+
+        pauseClock();
+
+        game.load(gameData.fen);
+        board.position(gameData.fen);
+        moveHistory = gameData.moveHistory || [];
+        capturedPieces = gameData.capturedPieces || { white: [], black: [] };
+        whiteTime = gameData.whiteTime || 600;
+        blackTime = gameData.blackTime || 600;
+        playerColor = gameData.playerColor || 'white';
+        difficulty = gameData.difficulty || 3;
+
+        gameInProgress = !game.game_over();
+
+        updateMoveHistory();
+        updateCapturedPieces();
+        updateStatistics();
+        updateClockDisplay();
+        updateStatus();
+
+        $('#colorSelect').val(playerColor);
+        $('#difficultySelect').val(difficulty);
+
+        alert('Partida cargada exitosamente!');
+    } catch (e) {
+        alert('Error al cargar la partida');
+    }
+}
+
+// ============================================
+// EXPORTAR PGN
+// ============================================
+function exportToPGN() {
+    var pgn = game.pgn();
+    var blob = new Blob([pgn], { type: 'text/plain' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'partida_ajedrez_' + Date.now() + '.pgn';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 // ============================================
 // INICIALIZACIÓN
 // ============================================
 $(document).ready(function() {
-    // Inicializar tablero
     board = Chessboard('board', config);
 
-    // Configurar event listeners
+    // Event listeners
     $('#newGameBtn').on('click', newGame);
+    $('#undoBtn').on('click', undoMove);
+    $('#flipBoardBtn').on('click', flipBoard);
+    $('#saveGameBtn').on('click', saveGame);
+    $('#loadGameBtn').on('click', loadGame);
+    $('#exportPGNBtn').on('click', exportToPGN);
 
     $('#difficultySelect').on('change', function() {
-        setDifficulty($(this).val());
+        difficulty = parseInt($(this).val());
     });
 
     $('#colorSelect').on('change', function() {
-        var newColor = $(this).val();
-        playerColor = newColor;
-        board.orientation(newColor);
+        playerColor = $(this).val();
+        board.orientation(playerColor);
         newGame();
     });
 
-    $('#flipBoardBtn').on('click', flipBoard);
+    $('#timeControl').on('change', function() {
+        var time = parseInt($(this).val());
+        whiteTime = time;
+        blackTime = time;
+        updateClockDisplay();
+    });
 
-    // Actualizar estado inicial
+    $('#themeSelect').on('change', function() {
+        changeTheme($(this).val());
+    });
+
+    $('#soundToggle').on('change', function() {
+        soundEnabled = $(this).is(':checked');
+    });
+
+    // Inicializar
+    changeTheme('classic');
     updateStatus();
+    updateStatistics();
+    updateClockDisplay();
 
-    console.log('Juego de ajedrez inicializado correctamente');
+    console.log('Ajedrez Pro inicializado correctamente');
 });

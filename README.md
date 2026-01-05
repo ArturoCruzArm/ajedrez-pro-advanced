@@ -1,122 +1,94 @@
-# Ajedrez con IA
+# Ajedrez Pro - Versión Avanzada con IA
 
-Un juego de ajedrez web interactivo donde puedes jugar contra una inteligencia artificial. Implementado con HTML, CSS y JavaScript puro, utilizando chess.js para la lógica del juego y chessboard.js para la interfaz visual.
+Un juego de ajedrez web profesional y completo con inteligencia artificial, reloj de ajedrez, historial de movimientos, temas personalizables y muchas más funciones avanzadas.
 
-## Características
+## Nuevas Características Profesionales
 
-- **Juega contra la IA**: Motor de ajedrez basado en el algoritmo minimax con poda alfa-beta
-- **5 niveles de dificultad**: Desde muy fácil hasta experto
-- **Interfaz intuitiva**: Arrastra y suelta las piezas para mover
-- **Validación completa**: Todos los movimientos son validados según las reglas oficiales del ajedrez
-- **Detección automática**: Jaque mate, empate, ahogado, triple repetición y material insuficiente
-- **Diseño responsive**: Funciona perfectamente en móviles, tablets y ordenadores
-- **Temas visuales**: Interfaz moderna y elegante
+### Funcionalidades Avanzadas
+- **Reloj de Ajedrez**: Sistema completo de temporizador con 5 modos (Sin límite, Blitz, Rápido, Estándar, Largo)
+- **Historial de Movimientos**: Registro completo con notación algebraica estándar
+- **Deshacer Movimientos**: Retrocede tus jugadas para explorar diferentes estrategias
+- **Guardar/Cargar Partida**: Guarda tu partida en el navegador y continúala después
+- **Exportar a PGN**: Descarga tus partidas para análisis externo
 
-## Cómo jugar
+### Mejoras Visuales y de Experiencia
+- **Sonidos de Movimiento**: Efectos de audio para movimientos, capturas, jaques y fin de partida
+- **4 Temas Visuales**: Clásico, Moderno, Madera y Mármol
+- **Estadísticas en Tiempo Real**: Material, capturas y conteo de movimientos
+- **Piezas Capturadas**: Visualización de todas las piezas capturadas con símbolos Unicode
+- **Indicadores de Reloj**: Alertas visuales cuando queda poco tiempo
 
-1. Selecciona tu color (blancas o negras)
-2. Elige el nivel de dificultad
-3. Arrastra las piezas para hacer tus movimientos
-4. La IA responderá automáticamente
-5. Usa "Nueva Partida" para reiniciar el juego
+## Características Originales
 
-## Tecnologías utilizadas
+- **Motor de IA Inteligente**: Algoritmo minimax con poda alfa-beta
+- **5 Niveles de Dificultad**: De muy fácil a experto
+- **Interfaz Drag & Drop**: Arrastra y suelta las piezas intuitivamente
+- **Validación Completa**: Todas las reglas del ajedrez implementadas
+- **Diseño Responsive**: Perfecto en móviles, tablets y ordenadores
+- **Detección Automática**: Jaque mate, empate, ahogado, triple repetición, material insuficiente
 
-- **HTML5**: Estructura de la página
-- **CSS3**: Estilos y animaciones
-- **JavaScript**: Lógica del juego
-- **chess.js**: Librería para la lógica y reglas del ajedrez
-- **chessboard.js**: Librería para la interfaz visual del tablero
-- **Bootstrap 5**: Framework CSS para diseño responsive
+## Cómo Jugar
+
+1. **Configurar Partida**:
+   - Selecciona tu tema favorito
+   - Elige el nivel de dificultad
+   - Decide si juegas con blancas o negras
+   - Configura el control de tiempo (o juega sin límite)
+
+2. **Durante la Partida**:
+   - Arrastra las piezas para mover
+   - Observa el reloj si activaste control de tiempo
+   - Revisa el historial de movimientos
+   - Usa "Deshacer" si quieres corregir un movimiento
+
+3. **Gestión de Partidas**:
+   - **Guardar**: Salva tu partida actual en el navegador
+   - **Cargar**: Recupera tu última partida guardada
+   - **Exportar PGN**: Descarga la partida para analizarla en otros programas
+
+## Tecnologías Utilizadas
+
+- **HTML5**: Estructura semántica
+- **CSS3**: Estilos modernos con animaciones y transiciones
+- **JavaScript (ES5)**: Lógica del juego y motor de IA
+- **chess.js**: Librería para reglas y validación
+- **chessboard.js**: Librería para interfaz visual
+- **Bootstrap 5**: Framework CSS responsive
+- **Bootstrap Icons**: Iconografía profesional
 - **jQuery**: Manipulación del DOM
+- **LocalStorage API**: Persistencia de partidas
 
-## Despliegue en GitHub Pages
+## Versiones
 
-Este proyecto está configurado para ser desplegado en GitHub Pages. Sigue estos pasos:
+### v2.0 (Actual - Pro)
+- Reloj de ajedrez con 5 modos
+- Historial de movimientos completo
+- Deshacer movimientos
+- Guardar/Cargar partidas
+- Exportar a PGN
+- 4 temas visuales
+- Sonidos de movimiento
+- Estadísticas detalladas
+- Visualización de piezas capturadas
 
-1. **Crea un repositorio en GitHub**:
-   - Ve a https://github.com/new
-   - Nombra tu repositorio (ej: "chess-game")
-   - Hazlo público
-   - No inicialices con README (ya lo tenemos)
-
-2. **Sube el código al repositorio**:
-   ```bash
-   cd chess-game
-   git init
-   git add .
-   git commit -m "Implementación inicial del juego de ajedrez"
-   git branch -M main
-   git remote add origin https://github.com/TU-USUARIO/TU-REPOSITORIO.git
-   git push -u origin main
-   ```
-
-3. **Habilita GitHub Pages**:
-   - Ve a tu repositorio en GitHub
-   - Settings > Pages
-   - En "Source", selecciona "Deploy from a branch"
-   - Selecciona la rama "main" y la carpeta "/ (root)"
-   - Haz clic en "Save"
-
-4. **Accede a tu juego**:
-   - Espera unos minutos para que se despliegue
-   - Tu juego estará disponible en: `https://TU-USUARIO.github.io/TU-REPOSITORIO/`
-
-## Probar localmente
-
-Para probar el juego en tu ordenador antes de subirlo a GitHub:
-
-1. Abre una terminal en la carpeta del proyecto
-2. Inicia un servidor local (elige uno):
-   - Python 3: `python -m http.server 8000`
-   - Python 2: `python -m SimpleHTTPServer 8000`
-   - Node.js: `npx http-server`
-3. Abre tu navegador en `http://localhost:8000`
-
-**Nota**: No abras el archivo HTML directamente en el navegador, ya que algunas funcionalidades pueden no funcionar correctamente debido a restricciones CORS.
-
-## Estructura del proyecto
-
-```
-chess-game/
-├── index.html          # Página principal
-├── css/
-│   └── styles.css     # Estilos personalizados
-├── js/
-│   └── main.js        # Lógica del juego y motor de IA
-└── README.md          # Este archivo
-```
-
-## Cómo funciona la IA
-
-El motor de IA utiliza el algoritmo **minimax con poda alfa-beta** para calcular el mejor movimiento:
-
-1. **Evaluación de posición**: Cada pieza tiene un valor, y la posición en el tablero también afecta la puntuación
-2. **Búsqueda en profundidad**: La IA explora varios movimientos hacia adelante
-3. **Poda alfa-beta**: Optimización que descarta ramas del árbol de búsqueda que no mejorarán el resultado
-4. **Niveles de dificultad**: Ajustan la profundidad de búsqueda (1-5 movimientos hacia adelante)
-
-## Mejoras futuras
-
-- Integración con Stockfish.js para una IA más fuerte
-- Historial de movimientos con notación algebraica
-- Función de deshacer movimientos
-- Exportar/importar partidas en formato PGN
-- Modo multijugador local
-- Reloj de ajedrez
-- Temas de tablero personalizables
-- Análisis de partida
+### v1.0 (Básica)
+- Juego básico contra IA
+- 5 niveles de dificultad
+- Interfaz simple
+- Validación de movimientos
 
 ## Licencia
 
-Este proyecto es de código abierto y está disponible bajo la licencia MIT.
+MIT License
 
 ## Créditos
 
-- **chess.js**: Librería de lógica de ajedrez por Jeff Hlywa
-- **chessboard.js**: Librería de interfaz de tablero por Chris Oakman
-- **Piezas de ajedrez**: Wikipedia (dominio público)
+- **Motor de IA**: Algoritmo minimax con poda alfa-beta
+- **chess.js**: Jeff Hlywa
+- **chessboard.js**: Chris Oakman
+- **Bootstrap**: Twitter
+- **Bootstrap Icons**: Bootstrap Team
 
 ---
 
-Hecho con por un entusiasta del ajedrez
+Desarrollado con pasión por el ajedrez

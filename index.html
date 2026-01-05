@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Juego de ajedrez web gratuito con IA. Juega contra el ordenador en diferentes niveles de dificultad.">
-    <title>Ajedrez con IA</title>
+    <meta name="description" content="Juego de ajedrez web profesional con IA, reloj, historial, temas y más funciones.">
+    <title>Ajedrez Pro - IA Avanzada</title>
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
     <!-- Chessboard CSS -->
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
@@ -16,41 +19,37 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center mb-4">Ajedrez con IA</h1>
+    <div class="container-fluid mt-4">
+        <h1 class="text-center mb-4">
+            <i class="bi bi-trophy-fill"></i> Ajedrez Pro
+        </h1>
 
         <div class="row">
-            <!-- Tablero -->
-            <div class="col-lg-8 col-md-7 mb-4">
-                <div class="board-wrapper">
-                    <div id="board" class="board-container"></div>
-                </div>
-            </div>
-
-            <!-- Panel de control -->
-            <div class="col-lg-4 col-md-5">
-                <div class="card shadow">
+            <!-- Columna izquierda: Controles principales -->
+            <div class="col-lg-3 col-md-4 mb-4">
+                <div class="card shadow mb-3">
                     <div class="card-body">
-                        <h5 class="card-title">Controles</h5>
+                        <h5 class="card-title">
+                            <i class="bi bi-gear-fill"></i> Configuración
+                        </h5>
 
-                        <!-- Estado del juego -->
-                        <div class="status-section mb-3">
-                            <div id="turnIndicator" class="alert alert-info mb-2">
-                                Turno: Blancas
-                            </div>
-                            <div id="gameStatus" class="alert alert-warning" style="display:none;">
-                            </div>
+                        <!-- Selector de tema -->
+                        <div class="mb-3">
+                            <label for="themeSelect" class="form-label">
+                                <strong><i class="bi bi-palette-fill"></i> Tema:</strong>
+                            </label>
+                            <select id="themeSelect" class="form-select">
+                                <option value="classic" selected>Clásico</option>
+                                <option value="modern">Moderno</option>
+                                <option value="wood">Madera</option>
+                                <option value="marble">Mármol</option>
+                            </select>
                         </div>
-
-                        <!-- Nueva partida -->
-                        <button id="newGameBtn" class="btn btn-success w-100 mb-3">
-                            Nueva Partida
-                        </button>
 
                         <!-- Selector de dificultad -->
                         <div class="mb-3">
                             <label for="difficultySelect" class="form-label">
-                                <strong>Dificultad:</strong>
+                                <strong><i class="bi bi-speedometer"></i> Dificultad:</strong>
                             </label>
                             <select id="difficultySelect" class="form-select">
                                 <option value="1">Muy Fácil</option>
@@ -64,7 +63,7 @@
                         <!-- Selector de color -->
                         <div class="mb-3">
                             <label for="colorSelect" class="form-label">
-                                <strong>Jugar como:</strong>
+                                <strong><i class="bi bi-circle-half"></i> Jugar como:</strong>
                             </label>
                             <select id="colorSelect" class="form-select">
                                 <option value="white" selected>Blancas</option>
@@ -72,31 +71,163 @@
                             </select>
                         </div>
 
-                        <!-- Voltear tablero -->
-                        <button id="flipBoardBtn" class="btn btn-secondary w-100 mb-3">
-                            Voltear Tablero
-                        </button>
+                        <!-- Selector de tiempo -->
+                        <div class="mb-3">
+                            <label for="timeControl" class="form-label">
+                                <strong><i class="bi bi-clock-fill"></i> Control de tiempo:</strong>
+                            </label>
+                            <select id="timeControl" class="form-select">
+                                <option value="0">Sin límite</option>
+                                <option value="180">Blitz (3 min)</option>
+                                <option value="300">Rápido (5 min)</option>
+                                <option value="600" selected>Estándar (10 min)</option>
+                                <option value="1800">Largo (30 min)</option>
+                            </select>
+                        </div>
 
-                        <!-- Indicador de pensamiento -->
-                        <div id="thinkingIndicator" class="alert alert-light text-center" style="display:none;">
-                            <div class="spinner-border spinner-border-sm me-2" role="status">
-                                <span class="visually-hidden">Pensando...</span>
-                            </div>
-                            La IA está pensando...
+                        <!-- Sonidos -->
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="soundToggle" checked>
+                            <label class="form-check-label" for="soundToggle">
+                                <strong><i class="bi bi-volume-up-fill"></i> Sonidos</strong>
+                            </label>
                         </div>
                     </div>
                 </div>
 
-                <!-- Información adicional -->
+                <!-- Botones de acción -->
+                <div class="card shadow mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-controller"></i> Acciones
+                        </h5>
+
+                        <button id="newGameBtn" class="btn btn-success w-100 mb-2">
+                            <i class="bi bi-play-fill"></i> Nueva Partida
+                        </button>
+
+                        <button id="undoBtn" class="btn btn-warning w-100 mb-2">
+                            <i class="bi bi-arrow-counterclockwise"></i> Deshacer
+                        </button>
+
+                        <button id="flipBoardBtn" class="btn btn-secondary w-100 mb-2">
+                            <i class="bi bi-arrow-repeat"></i> Voltear Tablero
+                        </button>
+
+                        <hr>
+
+                        <button id="saveGameBtn" class="btn btn-info w-100 mb-2">
+                            <i class="bi bi-save-fill"></i> Guardar Partida
+                        </button>
+
+                        <button id="loadGameBtn" class="btn btn-info w-100 mb-2">
+                            <i class="bi bi-folder-open"></i> Cargar Partida
+                        </button>
+
+                        <button id="exportPGNBtn" class="btn btn-primary w-100">
+                            <i class="bi bi-download"></i> Exportar PGN
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Estadísticas -->
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-graph-up"></i> Estadísticas
+                        </h5>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <span class="stat-label">Material Blancas:</span>
+                                <span id="whiteMaterial" class="stat-value">39</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Material Negras:</span>
+                                <span id="blackMaterial" class="stat-value">39</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Capturas Blancas:</span>
+                                <span id="whiteCaptures" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Capturas Negras:</span>
+                                <span id="blackCaptures" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Total Movimientos:</span>
+                                <span id="totalMoves" class="stat-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna central: Tablero -->
+            <div class="col-lg-6 col-md-8 mb-4">
+                <!-- Reloj jugador negro -->
+                <div class="player-clock black-clock mb-2">
+                    <div class="clock-label">
+                        <i class="bi bi-person-fill"></i> Negras
+                    </div>
+                    <div id="blackClock" class="clock-time">10:00</div>
+                </div>
+
+                <!-- Tablero -->
+                <div class="board-wrapper">
+                    <div id="board" class="board-container"></div>
+                </div>
+
+                <!-- Reloj jugador blanco -->
+                <div class="player-clock white-clock mt-2">
+                    <div class="clock-label">
+                        <i class="bi bi-person-fill"></i> Blancas
+                    </div>
+                    <div id="whiteClock" class="clock-time">10:00</div>
+                </div>
+
+                <!-- Estado del juego -->
+                <div class="status-section mt-3">
+                    <div id="turnIndicator" class="alert alert-info text-center mb-2">
+                        <i class="bi bi-hourglass-split"></i> Turno: Blancas
+                    </div>
+                    <div id="gameStatus" class="alert alert-warning text-center" style="display:none;">
+                    </div>
+                    <div id="thinkingIndicator" class="alert alert-light text-center" style="display:none;">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Pensando...</span>
+                        </div>
+                        <i class="bi bi-cpu"></i> La IA está pensando...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna derecha: Historial de movimientos -->
+            <div class="col-lg-3 col-md-12">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-list-ol"></i> Historial de Movimientos
+                        </h5>
+                        <div id="moveHistory" class="move-history">
+                            <p class="text-muted text-center">No hay movimientos aún</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Piezas capturadas -->
                 <div class="card shadow mt-3">
                     <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Cómo jugar</h6>
-                        <ul class="small mb-0">
-                            <li>Arrastra las piezas para mover</li>
-                            <li>Selecciona tu color antes de iniciar</li>
-                            <li>Ajusta la dificultad según tu nivel</li>
-                            <li>La IA calculará el mejor movimiento</li>
-                        </ul>
+                        <h5 class="card-title">
+                            <i class="bi bi-x-circle"></i> Capturas
+                        </h5>
+                        <div class="captured-section mb-2">
+                            <strong>Blancas capturadas:</strong>
+                            <div id="whiteCaptured" class="captured-pieces"></div>
+                        </div>
+                        <div class="captured-section">
+                            <strong>Negras capturadas:</strong>
+                            <div id="blackCaptured" class="captured-pieces"></div>
+                        </div>
                     </div>
                 </div>
             </div>
