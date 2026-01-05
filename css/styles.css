@@ -1,0 +1,190 @@
+/* Estilos generales */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px 0;
+}
+
+.container {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+h1 {
+    color: #333;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Tablero de ajedrez */
+.board-wrapper {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.board-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Ajustar tablero en móviles */
+@media (max-width: 768px) {
+    .board-container {
+        max-width: 100%;
+    }
+
+    .container {
+        padding: 15px;
+    }
+}
+
+/* Panel de estado */
+.status-section {
+    text-align: center;
+}
+
+#turnIndicator {
+    font-weight: 600;
+    margin-bottom: 10px;
+    border-radius: 8px;
+}
+
+#gameStatus {
+    font-weight: 700;
+    border-radius: 8px;
+    animation: fadeIn 0.5s;
+}
+
+#thinkingIndicator {
+    border-radius: 8px;
+    animation: pulse 1.5s infinite;
+}
+
+/* Tarjetas */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-title {
+    color: #667eea;
+    font-weight: 700;
+}
+
+/* Botones */
+.btn {
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #63408b 100%);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+/* Selectores */
+.form-select {
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    transition: border-color 0.3s;
+}
+
+.form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Resaltar cuadros del tablero */
+.highlight-square {
+    box-shadow: inset 0 0 10px 5px rgba(255, 255, 0, 0.5);
+}
+
+.highlight-last-move {
+    box-shadow: inset 0 0 8px 3px rgba(102, 126, 234, 0.4);
+}
+
+/* Efectos en piezas */
+.piece-417db {
+    cursor: grab;
+    transition: transform 0.2s;
+}
+
+.piece-417db:hover {
+    transform: scale(1.05);
+}
+
+.piece-417db:active {
+    cursor: grabbing;
+    transform: scale(0.95);
+}
+
+/* Lista de instrucciones */
+ul.small {
+    padding-left: 1.2rem;
+}
+
+ul.small li {
+    margin-bottom: 0.3rem;
+    color: #555;
+}
+
+/* Texto muted */
+.text-muted {
+    color: #999 !important;
+}
+
+/* Mejoras visuales */
+.alert {
+    border: none;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}

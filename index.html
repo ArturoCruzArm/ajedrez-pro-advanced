@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Juego de ajedrez web gratuito con IA. Juega contra el ordenador en diferentes niveles de dificultad.">
+    <title>Ajedrez con IA</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <!-- Chessboard CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Ajedrez con IA</h1>
+
+        <div class="row">
+            <!-- Tablero -->
+            <div class="col-lg-8 col-md-7 mb-4">
+                <div class="board-wrapper">
+                    <div id="board" class="board-container"></div>
+                </div>
+            </div>
+
+            <!-- Panel de control -->
+            <div class="col-lg-4 col-md-5">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">Controles</h5>
+
+                        <!-- Estado del juego -->
+                        <div class="status-section mb-3">
+                            <div id="turnIndicator" class="alert alert-info mb-2">
+                                Turno: Blancas
+                            </div>
+                            <div id="gameStatus" class="alert alert-warning" style="display:none;">
+                            </div>
+                        </div>
+
+                        <!-- Nueva partida -->
+                        <button id="newGameBtn" class="btn btn-success w-100 mb-3">
+                            Nueva Partida
+                        </button>
+
+                        <!-- Selector de dificultad -->
+                        <div class="mb-3">
+                            <label for="difficultySelect" class="form-label">
+                                <strong>Dificultad:</strong>
+                            </label>
+                            <select id="difficultySelect" class="form-select">
+                                <option value="1">Muy Fácil</option>
+                                <option value="2">Fácil</option>
+                                <option value="3" selected>Medio</option>
+                                <option value="4">Difícil</option>
+                                <option value="5">Experto</option>
+                            </select>
+                        </div>
+
+                        <!-- Selector de color -->
+                        <div class="mb-3">
+                            <label for="colorSelect" class="form-label">
+                                <strong>Jugar como:</strong>
+                            </label>
+                            <select id="colorSelect" class="form-select">
+                                <option value="white" selected>Blancas</option>
+                                <option value="black">Negras</option>
+                            </select>
+                        </div>
+
+                        <!-- Voltear tablero -->
+                        <button id="flipBoardBtn" class="btn btn-secondary w-100 mb-3">
+                            Voltear Tablero
+                        </button>
+
+                        <!-- Indicador de pensamiento -->
+                        <div id="thinkingIndicator" class="alert alert-light text-center" style="display:none;">
+                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                                <span class="visually-hidden">Pensando...</span>
+                            </div>
+                            La IA está pensando...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información adicional -->
+                <div class="card shadow mt-3">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Cómo jugar</h6>
+                        <ul class="small mb-0">
+                            <li>Arrastra las piezas para mover</li>
+                            <li>Selecciona tu color antes de iniciar</li>
+                            <li>Ajusta la dificultad según tu nivel</li>
+                            <li>La IA calculará el mejor movimiento</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Chess.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+    <!-- Chessboard.js -->
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+
+    <!-- Script principal -->
+    <script src="js/main.js"></script>
+</body>
+</html>
